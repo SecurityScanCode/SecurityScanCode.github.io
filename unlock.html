@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Verizon Secure Unlock</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#1a1a1a;min-height:100vh;
+      display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{background:#fff;border-radius:16px;padding:28px 24px;
+      width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+    .vz{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px}
+    .vz b{font-size:22px;font-weight:900;letter-spacing:-.5px}
+    .sub{font-size:12px;color:#888;text-align:center;margin-bottom:20px}
+
+    /* screens */
+    #loading,#error-screen{text-align:center;padding:10px 0}
+    .spin{font-size:32px;animation:spin 1s linear infinite;display:block;margin-bottom:10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .err-icon{font-size:40px;margin-bottom:10px;display:block}
+    .err-title{font-size:16px;font-weight:700;color:#CD040B;margin-bottom:6px}
+    .err-sub{font-size:13px;color:#888}
+
+    /* question screen */
+    #question-screen{display:none}
+    .lock{font-size:44px;text-align:center;margin-bottom:14px}
+    .qbox{background:#f8f8f8;border:1px solid #eee;border-radius:10px;
+      padding:14px;margin-bottom:16px}
+    .ql{font-size:10px;font-weight:700;color:#CD040B;text-transform:uppercase;
+      letter-spacing:.8px;margin-bottom:5px}
+    .qt{font-size:15px;font-weight:600;color:#1a1a1a;word-break:break-word}
+    .albl{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;
+      letter-spacing:.6px;margin-bottom:7px}
+    .ig{position:relative;margin-bottom:12px}
+    input{width:100%;padding:11px 40px 11px 13px;border:2px solid #e5e5e5;
+      border-radius:9px;font-size:15px;outline:none;transition:border .2s}
+    input:focus{border-color:#CD040B}
+    input:disabled{background:#f5f5f5;color:#aaa}
+    .eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);
+      cursor:pointer;font-size:16px;color:#bbb;user-select:none}
+    .ubtn{width:100%;padding:13px;background:#CD040B;color:#fff;border:none;
+      border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+    .ubtn:hover{background:#a50309}
+    .ubtn:disabled{background:#ccc;cursor:default}
+    .att{font-size:12px;color:#888;text-align:center;margin-top:8px}
+    .att.danger{color:#CD040B}
+    .ebox{background:#fff5f5;border:2px solid #CD040B;border-radius:9px;
+      padding:10px 14px;margin-top:10px;display:none}
+    .ebox.show{display:block}
+    .et{color:#CD040B;font-size:13px;font-weight:700}
+    .es{font-size:12px;color:#888;margin-top:2px}
+
+    /* success screen */
+    #success-screen{display:none}
+    .sbox{background:#f0fff4;border:2px solid #22c55e;border-radius:12px;padding:22px;text-align:center}
+    .sl{font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;
+      letter-spacing:.8px;margin-bottom:10px}
+    .spwd{font-size:24px;font-weight:800;letter-spacing:2px;
+      word-break:break-all;margin-bottom:14px;color:#1a1a1a}
+    .cbtn{width:100%;padding:11px;background:#111;color:#fff;border:none;
+      border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+    .cbtn:hover{background:#333}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="vz">
+    <svg width="22" height="22" viewBox="0 0 50 50" fill="none">
+      <path d="M6 20 L20 40 L46 4" stroke="#CD040B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <b>verizon</b>
+  </div>
+  <p class="sub">Secure Password Unlock</p>
+
+  <!-- Loading -->
+  <div id="loading">
+    <span class="spin">&#9881;</span>
+    <p style="color:#888;font-size:14px">Reading QR data...</p>
+  </div>
+
+  <!-- Error -->
+  <div id="error-screen" style="display:none">
+    <span class="err-icon">&#9888;</span>
+    <div class="err-title">Invalid QR Code</div>
+    <p class="err-sub">This page must be opened by scanning a Verizon Secure QR code.</p>
+  </div>
+
+  <!-- Question -->
+  <div id="question-screen">
+    <div class="lock">&#128274;</div>
+    <div class="qbox">
+      <div class="ql">Security Question</div>
+      <div class="qt" id="qtext"></div>
+    </div>
+    <div class="albl">Your Answer</div>
+    <div class="ig">
+      <input type="password" id="ans" placeholder="Type your answer..."/>
+      <span class="eye" onclick="toggleEye()">&#128065;</span>
+    </div>
+    <button class="ubtn" id="ubtn" onclick="unlock()">Unlock Password</button>
+    <p class="att" id="att">3 attempts remaining</p>
+    <div class="ebox" id="ebox">
+      <div class="et">&#10060; Wrong answer</div>
+      <div class="es" id="esub">Please try again.</div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div id="success-screen">
+    <div class="sbox">
+      <div class="sl">&#9989; Password Unlocked</div>
+      <div class="spwd" id="spwd"></div>
+      <button class="cbtn" id="cbtn" onclick="copyPwd()">Copy Password</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let payload = null;
+let attempts = 3;
+
+window.onload = () => {
+  const hash = window.location.hash.slice(1);
+  if (!hash) { showError(); return; }
+  try {
+    payload = JSON.parse(atob(hash));
+    if (!payload.q || !payload.s || !payload.iv || !payload.enc) throw new Error();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('qtext').textContent = payload.q;
+    document.getElementById('question-screen').style.display = 'block';
+    document.getElementById('ans').focus();
+  } catch {
+    showError();
+  }
+};
+
+function showError() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('error-screen').style.display = 'block';
+}
+
+function toggleEye() {
+  const i = document.getElementById('ans');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+async function unlock() {
+  if (attempts <= 0) return;
+  const answer = document.getElementById('ans').value.trim();
+  if (!answer) { alert('Please enter your answer.'); return; }
+
+  try {
+    const enc  = new TextEncoder();
+    const salt = Uint8Array.from(atob(payload.s),   c => c.charCodeAt(0));
+    const iv   = Uint8Array.from(atob(payload.iv),  c => c.charCodeAt(0));
+    const encB = Uint8Array.from(atob(payload.enc), c => c.charCodeAt(0));
+
+    const km  = await crypto.subtle.importKey('raw', enc.encode(answer), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt, iterations:100000, hash:'SHA-256' },
+      km, { name:'AES-GCM', length:256 }, false, ['decrypt']
+    );
+    const dec = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, encB);
+    const pwd = new TextDecoder().decode(dec);
+
+    document.getElementById('question-screen').style.display = 'none';
+    document.getElementById('spwd').textContent = pwd;
+    document.getElementById('success-screen').style.display = 'block';
+
+  } catch {
+    attempts--;
+    document.getElementById('ans').value = '';
+    document.getElementById('ebox').classList.add('show');
+
+    if (attempts <= 0) {
+      document.getElementById('esub').textContent = 'Too many wrong attempts. Locked.';
+      document.getElementById('ans').disabled = true;
+      document.getElementById('ubtn').disabled = true;
+      document.getElementById('att').textContent = 'Access locked';
+      document.getElementById('att').classList.add('danger');
+    } else {
+      document.getElementById('esub').textContent = 'Please try again.';
+      document.getElementById('att').textContent = `${attempts} attempt${attempts > 1 ? 's' : ''} remaining`;
+      if (attempts === 1) document.getElementById('att').classList.add('danger');
+    }
+  }
+}
+
+function copyPwd() {
+  const pwd = document.getElementById('spwd').textContent;
+  navigator.clipboard.writeText(pwd).then(() => {
+    const btn = document.getElementById('cbtn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy Password', 2000);
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlock();
+});
+</script>
+</body>
+</html>
