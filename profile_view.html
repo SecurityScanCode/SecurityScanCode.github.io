@@ -121,6 +121,8 @@ window.onload = () => {
         <div class="sec-label">Contact</div>
         ${row('&#9993;',   'Email', data.email, 'mailto:' + data.email)}
         ${row('&#128222;', 'Phone', data.phone, 'tel:'    + data.phone)}
+        ${data.location ? row('&#127970;', 'Work Location', data.location, '') : ''}
+        ${data.desk     ? row('&#128203;', 'Desk Number',   data.desk,     '') : ''}
       </div>
 
       ${supSection}
