@@ -91,10 +91,17 @@
     <div class="photo-wrap">
       <div class="photo-preview" id="photoPreview">&#128100;</div>
       <div class="photo-right">
-        <label class="photo-btn" for="photoInput">&#128247; Upload Photo</label>
+        <label class="photo-btn" for="photoInput">&#128247; Preview Photo</label>
         <input type="file" id="photoInput" accept="image/*" onchange="loadPhoto(this)"/>
-        <div class="photo-hint">JPG / PNG — will be compressed automatically</div>
+        <div class="photo-hint">Local preview only — paste GitHub URL below</div>
       </div>
+    </div>
+
+    <label class="lbl">Photo URL (GitHub)</label>
+    <input type="url" id="photoUrl" placeholder="https://SecurityScanCode.github.io/photos/name.jpg"
+      oninput="previewUrl(this.value)"/>
+    <div class="photo-hint" style="margin-bottom:4px">
+      Upload photo to your GitHub repo under <strong>/photos/</strong> folder, then paste the URL above.
     </div>
 
     <label class="lbl">Full Name</label>
@@ -140,6 +147,15 @@
 <script>
 let photoData = '';
 
+function previewUrl(url) {
+  if (!url) return;
+  const prev = document.getElementById('photoPreview');
+  const img = new Image();
+  img.onload = () => { prev.innerHTML = '<img src="' + url + '"/>'; };
+  img.onerror = () => {};
+  img.src = url;
+}
+
 function loadPhoto(input) {
   const file = input.files[0];
   if (!file) return;
@@ -174,6 +190,7 @@ function gen() {
   const sname    = document.getElementById('sname').value.trim();
   const semail   = document.getElementById('semail').value.trim();
   const sphone   = document.getElementById('sphone').value.trim();
+  const photoUrl = document.getElementById('photoUrl').value.trim();
   const err      = document.getElementById('err');
   err.classList.remove('show');
 
@@ -181,11 +198,11 @@ function gen() {
   if (!uemail) { err.textContent = 'Enter the user email.';       err.classList.add('show'); return; }
   if (!uphone) { err.textContent = 'Enter the user phone.';       err.classList.add('show'); return; }
 
-  // photo stays as local preview only — not included in QR (too large for QR codes)
   const payload = {
     name:   uname,
     email:  uemail,
     phone:  uphone,
+    photo:  photoUrl,
     sname:  sname,
     semail: semail,
     sphone: sphone
