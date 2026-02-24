@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Locker Password - Profile QR Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#1a1a1a;min-height:100vh;
+      display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{background:#fff;border-radius:16px;width:100%;max-width:430px;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden}
+    .hdr{padding:22px 28px 0;text-align:center;border-bottom:1px solid #f0f0f0}
+    .vrow{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:3px}
+    .vbrand{font-size:22px;font-weight:900;color:#000;letter-spacing:-.5px}
+    .vtag{font-size:12px;color:#888;margin-bottom:14px}
+    .body{padding:24px 28px 28px}
+
+    hr{border:none;border-top:1px solid #f0f0f0;margin:16px 0}
+    .sec-title{font-size:11px;font-weight:800;color:#CD040B;text-transform:uppercase;
+      letter-spacing:.8px;margin-bottom:12px}
+
+    .lbl{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;
+      letter-spacing:.6px;margin-bottom:5px;margin-top:12px;display:block}
+    .lbl:first-child{margin-top:0}
+    .ig{position:relative}
+    input[type=text],input[type=email],input[type=tel]{width:100%;
+      padding:11px 12px;border:2px solid #e5e5e5;border-radius:9px;
+      font-size:14px;outline:none;transition:border .2s;color:#1a1a1a;margin-bottom:3px}
+    input:focus{border-color:#CD040B}
+
+    /* photo upload */
+    .photo-wrap{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+    .photo-preview{width:72px;height:72px;border-radius:50%;object-fit:cover;
+      border:3px solid #e5e5e5;background:#f5f5f5;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;font-size:28px;color:#ccc}
+    .photo-preview img{width:72px;height:72px;border-radius:50%;object-fit:cover;display:block}
+    .photo-right{flex:1}
+    .photo-btn{display:inline-block;padding:9px 14px;background:#f5f5f5;border:2px solid #e5e5e5;
+      border-radius:9px;font-size:13px;font-weight:600;color:#555;cursor:pointer;
+      transition:border .2s;width:100%;text-align:center}
+    .photo-btn:hover{border-color:#CD040B;color:#CD040B}
+    .photo-hint{font-size:11px;color:#aaa;margin-top:5px}
+    #photoInput{display:none}
+
+    .btn{width:100%;padding:13px;background:#CD040B;color:#fff;border:none;
+      border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;
+      transition:background .2s}
+    .btn:hover{background:#a50309}
+    .errmsg{display:none;margin-top:8px;color:#CD040B;font-size:12px;font-weight:600;
+      background:#fff5f5;border:1px solid #fcc;border-radius:7px;padding:9px}
+    .errmsg.show{display:block}
+
+    /* output */
+    .out{display:none;margin-top:20px;text-align:center}
+    .out.show{display:block}
+    #qrcode{display:none}
+    #fc{border-radius:10px;max-width:100%}
+    .dlbtn{width:100%;padding:10px;background:#111;color:#fff;border:none;
+      border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px}
+    .dlbtn:hover{background:#333}
+    .done-note{margin-top:10px;font-size:12px;line-height:1.8;color:#1a1a1a;
+      background:#f0fff4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;text-align:left}
+    .done-note strong{color:#16a34a}
+    canvas#compressCanvas{display:none}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="hdr">
+    <div class="vrow">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L4 5.5V11c0 5.25 3.75 10.15 8 11.35C16.25 21.15 20 16.25 20 11V5.5L12 2z" fill="#CD040B"/>
+        <rect x="9.5" y="11" width="5" height="4.5" rx="1" fill="white"/>
+        <path d="M10 11V9.5a2 2 0 014 0V11" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span class="vbrand">Locker Password</span>
+    </div>
+    <p class="vtag">Profile QR Generator</p>
+  </div>
+
+  <div class="body">
+    <input type="hidden" id="hostUrl" value="https://SecurityScanCode.github.io/profile_view.html"/>
+    <canvas id="compressCanvas"></canvas>
+
+    <!-- USER DETAILS -->
+    <div class="sec-title">User Details</div>
+
+    <label class="lbl">Photo</label>
+    <div class="photo-wrap">
+      <div class="photo-preview" id="photoPreview">&#128100;</div>
+      <div class="photo-right">
+        <label class="photo-btn" for="photoInput">&#128247; Upload Photo</label>
+        <input type="file" id="photoInput" accept="image/*" onchange="loadPhoto(this)"/>
+        <div class="photo-hint">JPG / PNG — will be compressed automatically</div>
+      </div>
+    </div>
+
+    <label class="lbl">Full Name</label>
+    <input type="text" id="uname" placeholder="e.g. John Smith"/>
+
+    <label class="lbl">Email</label>
+    <input type="email" id="uemail" placeholder="john@example.com"/>
+
+    <label class="lbl">Phone</label>
+    <input type="tel" id="uphone" placeholder="+1 234 567 8900"/>
+
+    <hr/>
+
+    <!-- SUPERVISOR DETAILS -->
+    <div class="sec-title">Supervisor Details</div>
+
+    <label class="lbl">Supervisor Name</label>
+    <input type="text" id="sname" placeholder="e.g. Jane Doe"/>
+
+    <label class="lbl">Supervisor Email</label>
+    <input type="email" id="semail" placeholder="jane@example.com"/>
+
+    <label class="lbl">Supervisor Phone</label>
+    <input type="tel" id="sphone" placeholder="+1 234 567 8900"/>
+
+    <div class="errmsg" id="err"></div>
+    <button class="btn" onclick="gen()">&#128273; Generate Profile QR</button>
+
+    <!-- OUTPUT -->
+    <div class="out" id="out">
+      <div id="qrcode"></div>
+      <canvas id="fc"></canvas>
+      <button class="dlbtn" onclick="dl()">&#11015; Download QR Image</button>
+      <div class="done-note">
+        <strong>&#9989; Ready!</strong> Scan this QR with any iPhone or Android camera.<br>
+        &rarr; Profile details appear instantly<br>
+        &rarr; Tap email or phone to contact
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let photoData = '';
+
+function loadPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('compressCanvas');
+      canvas.width = 48;
+      canvas.height = 48;
+      const ctx = canvas.getContext('2d');
+      // crop to square from center
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, 48, 48);
+      photoData = canvas.toDataURL('image/jpeg', 0.08);
+      // show preview
+      document.getElementById('photoPreview').innerHTML =
+        '<img src="' + photoData + '"/>';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function gen() {
+  const hostUrl  = document.getElementById('hostUrl').value.trim().replace(/\/+$/, '');
+  const uname    = document.getElementById('uname').value.trim();
+  const uemail   = document.getElementById('uemail').value.trim();
+  const uphone   = document.getElementById('uphone').value.trim();
+  const sname    = document.getElementById('sname').value.trim();
+  const semail   = document.getElementById('semail').value.trim();
+  const sphone   = document.getElementById('sphone').value.trim();
+  const err      = document.getElementById('err');
+  err.classList.remove('show');
+
+  if (!uname)  { err.textContent = 'Enter the user full name.';  err.classList.add('show'); return; }
+  if (!uemail) { err.textContent = 'Enter the user email.';       err.classList.add('show'); return; }
+  if (!uphone) { err.textContent = 'Enter the user phone.';       err.classList.add('show'); return; }
+
+  // photo stays as local preview only — not included in QR (too large for QR codes)
+  const payload = {
+    name:   uname,
+    email:  uemail,
+    phone:  uphone,
+    sname:  sname,
+    semail: semail,
+    sphone: sphone
+  };
+
+  const finalUrl = hostUrl + '#' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+
+  const box = document.getElementById('qrcode');
+  box.innerHTML = '';
+
+  new QRCode(box, {
+    text: finalUrl,
+    width: 280, height: 280,
+    colorDark: '#1a1a1a',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.L
+  });
+
+  setTimeout(drawCanvas, 300);
+  document.getElementById('out').classList.add('show');
+}
+
+function drawCanvas() {
+  const src = document.querySelector('#qrcode canvas');
+  if (!src) return;
+  const fc = document.getElementById('fc');
+  fc.width = 280; fc.height = 306;
+  const ctx = fc.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 280, 306);
+  ctx.drawImage(src, 0, 0, 280, 280);
+  ctx.fillStyle = '#CD040B';
+  ctx.fillRect(0, 280, 280, 26);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 12px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText('Locker Password — scan to view profile', 140, 295);
+}
+
+function dl() {
+  const fc = document.getElementById('fc');
+  if (!fc.width) return;
+  const a = document.createElement('a');
+  a.download = 'profile_qr.png';
+  a.href = fc.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>
